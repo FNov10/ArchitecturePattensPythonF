@@ -4,7 +4,8 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class OrderLine:
-    orderid: str
+    # This is a value object
+    orderid: str #Order reference. Different orderlines can have the same orderid
     qty: int
     sku: str
 
