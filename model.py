@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import false
+
+
 @dataclass(frozen=True)
 class OrderLine:
     # This is a value object
@@ -22,6 +25,11 @@ class Batch:
         self.eta = eta
         self._purchased_qty = qty
         self._allocated_lines = set()
+
+    def __eq__(self, other):
+        if not isinstance(other, Batch):
+            return false
+        return self.reference == other.reference
 
     def __str__(self):
         return (f"Batch {self.sku} with ref {self.reference}, available quantity of"

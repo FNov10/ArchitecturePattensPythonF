@@ -7,6 +7,9 @@ class Name:
     first_name: str
     last_name: str
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
 class Money(NamedTuple):
     currency: str
     value: int
@@ -38,6 +41,9 @@ Line = namedtuple('Line', ['sku', 'qty'])
 x = Money("AED", 40)
 def test_equality():
     assert Money("GBP", 40) == Money("GBP", 40)
+    x = Name("Fahad", "Naveed")
+    y = Name("Fahad","Naveed")
+    assert(x!=y)
 
 fiver = Money("AED", 5)
 tenner = Money("AED", 10)
