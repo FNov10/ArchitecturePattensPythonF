@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
-
+from typing import Optional, List
 from sqlalchemy import false
 
 
@@ -26,6 +25,13 @@ class Batch:
         self._purchased_qty = qty
         self._allocated_lines = set()
 
+    def __lt__(self, other):
+        if self.eta==None:
+            return True
+        if other.eta==None:
+            return False
+        return self.eta<other.eta
+
     def __eq__(self, other):
         if not isinstance(other, Batch):
             return false
@@ -34,6 +40,9 @@ class Batch:
     def __str__(self):
         return (f"Batch {self.sku} with ref {self.reference}, available quantity of"
                 f" {self.available_quantity}, and an ETA of {self.eta}")
+
+    def __hash(self):
+        return hash(self.reference)
 
     def allocate(self, line: OrderLine) -> None:
         if self.can_allocate(line):
@@ -61,5 +70,14 @@ class Batch:
     @property
     def available_quantity(self) -> int:
         return self._purchased_qty - self.allocated_quantity
+
+
+def allocate(line: OrderLine, batches: List[Batch]) -> str:
+    print(sorted(batches))
+    batch = next(
+        b for b in sorted(batches) if b.can_allocate(line)
+    )
+    batch.allocate(line)
+    return batch.reference
 
 

@@ -7,8 +7,10 @@ class Person:
 
 def test_fahad_is_harry():
     fahad = Person(Name("Fahad", "Naveed"))
+    fahad_clone = Person((Name("Fahad", "Naveed")))
     harry = fahad
 
     harry.name = Name("Harry", "Bombo")
     assert hash(harry) == hash(fahad)
-    assert fahad is harry
+    print(hash(fahad), hash(fahad_clone))
+    assert fahad == fahad_clone
