@@ -28,3 +28,19 @@ def test_prefers_current_stock_batches_to_shipments():
 
     assert in_stock_batch.available_quantity==90
     assert shipment_batch.available_quantity==100
+
+def test_raises_out_of_stock_exception_if_cannot_allocate():
+    batchinski = Batch(
+        'batch1',
+        'FORK',
+        10,
+        None
+    )
+    lineinskifam = OrderLine(
+        'order1',
+        10,
+        'FORK'
+    )
+    batchinski.allocate(lineinskifam)
+    with pytest.raises(OutOfStock, match='FORK'):
+        allocate(OrderLine('order2',2,'FORK'),[batchinski])
