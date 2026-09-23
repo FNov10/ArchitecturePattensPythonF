@@ -2,8 +2,7 @@ from idlelib.sidebar import LineNumbers
 
 from sqlalchemy.orm import mapper, relationship, sessionmaker, Session
 from sqlalchemy import Table, Column, String, Integer, MetaData, select, create_engine, Date, ForeignKey
-import model
-
+from model import *
 metadata = MetaData()
 
 order_lines = Table(
@@ -43,9 +42,32 @@ def start_mappers():
     # is robust. It allows us to evolve the domain logic to handle more complex
     # scenarios (like splitting orders) in the future without needing to change
     # the database schema itself.
-    lines_mapper = mapper(model.OrderLine, order_lines)
+
+    """
+
+    The mapper() function bridges your pure Python classes (Domain) with SQLAlchemy Table objects (Infrastructure). This is SQLAlchemy's classical/imperative mapping style.
+
+    lines_mapper = mapper(OrderLine, order_lines)
+    This binds the pure Python OrderLine class to the SQLAlchemy order_lines table. When you query the database, SQLAlchemy will return instances of OrderLine.
+
+    mapper(Batch, batches, properties={...})
+    This binds the pure Python Batch class to the batches table. The properties dictionary tells SQLAlchemy how to handle attributes that aren't simple database columns.
+
+    "_allocations": relationship(...)
+    This targets the private _allocations attribute on your Batch class and tells SQLAlchemy how to populate it using a relationship.
+
+    lines_mapper
+    The first argument to the relationship specifies the target of the relationship. It points to the OrderLine mapping defined in the first line.
+
+    secondary=allocations
+    This is the keyword that defines the many-to-many relationship. It tells SQLAlchemy to use the allocations table as the intermediary bridge to find which OrderLines belong to the Batch.
+
+    collection_class=set
+    By default, SQLAlchemy populates one-to-many or many-to-many relationships as Python list objects. This overrides that behavior, instructing SQLAlchemy to populate batch._allocations as a Python set. This ensures uniqueness and matches how the pure Python domain model expects to handle allocations.
+    """
+    lines_mapper = mapper(OrderLine, order_lines)
     mapper(
-        model.Batch,
+        Batch,
         batches,
         properties={
             "_allocations": relationship(
@@ -58,15 +80,30 @@ def start_mappers():
 start_mappers()
 
 # 1. Initialize the Engine
-engine = create_engine("sqlite:///example2.db")
+engine = create_engine("sqlite:///:memory:")
 metadata.create_all(engine)
 # 2. Create a configurable Session factory
 session = Session(engine)
-new_line = model.OrderLine("order1", "RED-CHAIR", 12)
-test_batch = model.Batch('batch-001','RED-CHAIR',100, None)
-# session.add(test_batch)
-# session.commit()
-# rows = list(session.execute('SELECT * from batches'))
-# print(next(batch for batch in session.query(model.Batch).all() if batch.reference=="bruh" else None))
-# print(rows)
+new_line = OrderLine("order1", "RED-CHAIR", 12)
+test_batch = Batch('batch-001','RED-CHAIR',100, None)
+test_batch.allocate(new_line)
+print(test_batch.allocated_quantity)
+session.add(test_batch)
+session.commit()
+rows = (session.execute('SELECT * from allocations'))
+print(session.query(Batch).all())
+print(rows)
+
+session.execute(
+        "INSERT INTO order_lines (orderid, sku, qty)"
+        ' VALUES ("order1", "GENERIC-SOFA", 12)'
+    )
+# Nested iterable unpacking
+orderline_id = list(session.execute(
+    "SELECT id FROM order_lines WHERE orderid=:orderid AND sku=:sku",
+    dict(orderid="order1", sku="GENERIC-SOFA"),
+))
+
+
+
 session.close()

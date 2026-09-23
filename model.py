@@ -9,6 +9,11 @@ class OutOfStock(Exception):
 
 
 def allocate(line: OrderLine, batches: List[Batch]) -> str:
+    """
+    Given multiple batches, allocate line to one with the earliest ETA
+    Of course, the pool of batches includes only those which can allocate
+    If you cannot allocate to any of the batches, raise custom exception
+    """
     try:
         batch = next(b for b in sorted(batches) if b.can_allocate(line))
         batch.allocate(line)

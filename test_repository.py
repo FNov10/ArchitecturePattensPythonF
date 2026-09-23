@@ -1,19 +1,18 @@
 # pylint: disable=protected-access
-import model
+from model import *
 import repository
 
 
 def test_repository_can_save_a_batch(session):
-    batch = model.Batch("batch1", "RUSTY-SOAPDISH", 100, eta=None)
-
+    batch = Batch("batch1", "RUSTY-SOAPDISH", 100, None)
     repo = repository.SqlRepository(session)
     repo.add(batch)
     session.commit()
 
-    rows = session.execute(
+    rows = list(session.execute(
         'SELECT reference, sku, _purchased_quantity, eta FROM "batches"'
-    )
-    assert list(rows) == [("batch1", "RUSTY-SOAPDISH", 100, None)]
+    ))
+    assert rows == [('batch1','RUSTY-SOAPDISH',100,None)]
 
 
 def insert_order_line(session):
@@ -21,6 +20,8 @@ def insert_order_line(session):
         "INSERT INTO order_lines (orderid, sku, qty)"
         ' VALUES ("order1", "GENERIC-SOFA", 12)'
     )
+    # Nested iterable unpacking
+    # same as wrapping the session.execute in a list, and returning the first element of the nested list [0][0]
     [[orderline_id]] = session.execute(
         "SELECT id FROM order_lines WHERE orderid=:orderid AND sku=:sku",
         dict(orderid="order1", sku="GENERIC-SOFA"),
@@ -55,15 +56,15 @@ def test_repository_can_retrieve_a_batch_with_allocations(session):
     insert_batch(session, "batch2")
     insert_allocation(session, orderline_id, batch1_id)
 
-    repo = repository.SqlRepository(session)
+    repo = repository.SqlRepositoryNoORM(session)
     retrieved = repo.get("batch1")
 
-    expected = model.Batch("batch1", "GENERIC-SOFA", 100, eta=None)
+    expected = Batch("batch1", "GENERIC-SOFA", 100, eta=None)
     assert retrieved == expected  # Batch.__eq__ only compares reference
     assert retrieved.sku == expected.sku
     assert retrieved._purchased_quantity == expected._purchased_quantity
     assert retrieved._allocations == {
-        model.OrderLine("order1", "GENERIC-SOFA", 12),
+        OrderLine("order1", "GENERIC-SOFA", 12),
     }
 
 
@@ -82,9 +83,9 @@ def get_allocations(session, batchid):
 
 
 def test_updating_a_batch(session):
-    order1 = model.OrderLine("order1", "WEATHERED-BENCH", 10)
-    order2 = model.OrderLine("order2", "WEATHERED-BENCH", 20)
-    batch = model.Batch("batch1", "WEATHERED-BENCH", 100, eta=None)
+    order1 = OrderLine("order1", "WEATHERED-BENCH", 10)
+    order2 = OrderLine("order2", "WEATHERED-BENCH", 20)
+    batch = Batch("batch1", "WEATHERED-BENCH", 100, eta=None)
     batch.allocate(order1)
 
     repo = repository.SqlRepository(session)

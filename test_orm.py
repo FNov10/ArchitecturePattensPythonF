@@ -1,9 +1,10 @@
 from datetime import date
 from model import Batch, OrderLine
 
-def test_orderline_mapper_can_add_lines(session):
+
+def test_orderline_mapper_can_load_lines(session):
     session.execute(
-        'INSERT INTO order_lines (orderid, sku, quantity) VALUES '
+        'INSERT INTO order_lines (orderid, sku, qty) VALUES '
         '("order1", "RED-CHAIR", 12)')
     expected = [
         OrderLine("order1", "RED-CHAIR", 12)
